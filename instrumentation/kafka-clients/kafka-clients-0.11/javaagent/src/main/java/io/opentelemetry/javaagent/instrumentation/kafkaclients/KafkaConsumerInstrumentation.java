@@ -5,7 +5,7 @@
 
 package io.opentelemetry.javaagent.instrumentation.kafkaclients;
 
-import static io.opentelemetry.javaagent.instrumentation.kafkaclients.KafkaSingletons.consumerInstrumenter;
+import static io.opentelemetry.instrumentation.kafka.KafkaSingletons.consumerInstrumenter;
 import static net.bytebuddy.matcher.ElementMatchers.isMethod;
 import static net.bytebuddy.matcher.ElementMatchers.isPublic;
 import static net.bytebuddy.matcher.ElementMatchers.named;
@@ -13,6 +13,9 @@ import static net.bytebuddy.matcher.ElementMatchers.returns;
 import static net.bytebuddy.matcher.ElementMatchers.takesArgument;
 import static net.bytebuddy.matcher.ElementMatchers.takesArguments;
 
+import io.opentelemetry.instrumentation.kafka.TracingIterable;
+import io.opentelemetry.instrumentation.kafka.TracingIterator;
+import io.opentelemetry.instrumentation.kafka.TracingList;
 import io.opentelemetry.javaagent.extension.instrumentation.TypeInstrumentation;
 import io.opentelemetry.javaagent.extension.instrumentation.TypeTransformer;
 import java.util.Iterator;

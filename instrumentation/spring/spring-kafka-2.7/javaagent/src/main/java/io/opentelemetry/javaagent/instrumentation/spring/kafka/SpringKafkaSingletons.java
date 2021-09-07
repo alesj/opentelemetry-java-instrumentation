@@ -12,10 +12,10 @@ import io.opentelemetry.instrumentation.api.instrumenter.SpanKindExtractor;
 import io.opentelemetry.instrumentation.api.instrumenter.SpanNameExtractor;
 import io.opentelemetry.instrumentation.api.instrumenter.messaging.MessageOperation;
 import io.opentelemetry.instrumentation.api.instrumenter.messaging.MessagingSpanNameExtractor;
-import io.opentelemetry.javaagent.instrumentation.kafka.KafkaConsumerAdditionalAttributesExtractor;
-import io.opentelemetry.javaagent.instrumentation.kafka.KafkaConsumerAttributesExtractor;
-import io.opentelemetry.javaagent.instrumentation.kafka.KafkaConsumerExperimentalAttributesExtractor;
-import io.opentelemetry.javaagent.instrumentation.kafka.KafkaHeadersGetter;
+import io.opentelemetry.instrumentation.kafka.KafkaConsumerAdditionalAttributesExtractor;
+import io.opentelemetry.instrumentation.kafka.KafkaConsumerAttributesExtractor;
+import io.opentelemetry.instrumentation.kafka.KafkaConsumerExperimentalAttributesExtractor;
+import io.opentelemetry.instrumentation.kafka.KafkaConsumerRecordGetter;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 public final class SpringKafkaSingletons {
@@ -43,7 +43,7 @@ public final class SpringKafkaSingletons {
       builder.addAttributesExtractor(new KafkaConsumerExperimentalAttributesExtractor());
     }
 
-    return builder.newConsumerInstrumenter(new KafkaHeadersGetter());
+    return builder.newConsumerInstrumenter(new KafkaConsumerRecordGetter());
   }
 
   private static Instrumenter<BatchRecords<?, ?>, Void> buildProcessInstrumenter() {
