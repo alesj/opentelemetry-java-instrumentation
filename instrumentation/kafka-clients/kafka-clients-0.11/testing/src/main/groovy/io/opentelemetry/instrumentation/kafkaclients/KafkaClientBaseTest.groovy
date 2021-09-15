@@ -1,0 +1,87 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package io.opentelemetry.instrumentation.kafkaclients
+
+import io.opentelemetry.instrumentation.test.InstrumentationSpecification
+import org.apache.kafka.clients.admin.AdminClient
+import org.apache.kafka.clients.admin.NewTopic
+import org.apache.kafka.clients.consumer.Consumer
+import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.Producer
+import org.apache.kafka.common.TopicPartition
+import org.apache.kafka.common.serialization.IntegerDeserializer
+import org.apache.kafka.common.serialization.IntegerSerializer
+import org.apache.kafka.common.serialization.StringDeserializer
+import org.apache.kafka.common.serialization.StringSerializer
+import org.testcontainers.containers.KafkaContainer
+import spock.lang.Shared
+
+import java.util.concurrent.TimeUnit
+
+abstract class KafkaClientBaseTest extends InstrumentationSpecification {
+
+  protected static final SHARED_TOPIC = "shared.topic"
+
+  private static final boolean propagationEnabled = Boolean.parseBoolean(
+    System.getProperty("otel.instrumentation.kafka.client-propagation.enabled", "true"))
+
+  @Shared
+  static KafkaContainer kafka
+  @Shared
+  static Producer<Integer, String> producer
+  @Shared
+  static Consumer<Integer, String> consumer
+
+  def setupSpec() {
+    kafka = new KafkaContainer()
+    kafka.start()
+
+    // create test topic
+    AdminClient.create(["bootstrap.servers": kafka.bootstrapServers]).withCloseable { admin ->
+      admin.createTopics([new NewTopic(SHARED_TOPIC, 1, (short) 1)]).all().get(10, TimeUnit.SECONDS)
+    }
+
+    producer = new KafkaProducer<>(producerProps())
+
+    consumer = new KafkaConsumer<>(consumerProps())
+
+    // assign only existing topic partition
+    consumer.assign([new TopicPartition(SHARED_TOPIC, 0)])
+  }
+
+  Map<String, ?> producerProps() {
+    // values copied from spring's KafkaTestUtils
+    return [
+      "bootstrap.servers": kafka.bootstrapServers,
+      "retries"          : 0,
+      "batch.size"       : "16384",
+      "linger.ms"        : 1,
+      "buffer.memory"    : "33554432",
+      "key.serializer"   : IntegerSerializer,
+      "value.serializer" : StringSerializer
+    ]
+  }
+
+  Map<String, ?> consumerProps() {
+    // values copied from spring's KafkaTestUtils
+    return [
+      "bootstrap.servers"      : kafka.bootstrapServers,
+      "group.id"               : "test",
+      "enable.auto.commit"     : "false",
+      "auto.commit.interval.ms": "10",
+      "session.timeout.ms"     : "60000",
+      "key.deserializer"       : IntegerDeserializer,
+      "value.deserializer"     : StringDeserializer
+    ]
+  }
+
+  def cleanupSpec() {
+    consumer?.close()
+    producer?.close()
+    kafka.stop()
+  }
+}

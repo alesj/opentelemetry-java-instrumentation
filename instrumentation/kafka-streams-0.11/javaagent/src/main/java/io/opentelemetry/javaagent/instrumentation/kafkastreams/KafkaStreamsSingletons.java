@@ -13,11 +13,11 @@ import io.opentelemetry.instrumentation.api.instrumenter.SpanLinksExtractor;
 import io.opentelemetry.instrumentation.api.instrumenter.SpanNameExtractor;
 import io.opentelemetry.instrumentation.api.instrumenter.messaging.MessageOperation;
 import io.opentelemetry.instrumentation.api.instrumenter.messaging.MessagingSpanNameExtractor;
-import io.opentelemetry.javaagent.instrumentation.kafka.KafkaConsumerAdditionalAttributesExtractor;
-import io.opentelemetry.javaagent.instrumentation.kafka.KafkaConsumerAttributesExtractor;
-import io.opentelemetry.javaagent.instrumentation.kafka.KafkaConsumerExperimentalAttributesExtractor;
-import io.opentelemetry.javaagent.instrumentation.kafka.KafkaHeadersGetter;
-import io.opentelemetry.javaagent.instrumentation.kafka.KafkaPropagation;
+import io.opentelemetry.instrumentation.kafka.KafkaConsumerAdditionalAttributesExtractor;
+import io.opentelemetry.instrumentation.kafka.KafkaConsumerAttributesExtractor;
+import io.opentelemetry.instrumentation.kafka.KafkaConsumerExperimentalAttributesExtractor;
+import io.opentelemetry.instrumentation.kafka.KafkaConsumerRecordGetter;
+import io.opentelemetry.instrumentation.kafka.KafkaPropagation;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 public final class KafkaStreamsSingletons {
@@ -43,7 +43,7 @@ public final class KafkaStreamsSingletons {
     if (KafkaPropagation.isPropagationEnabled()) {
       builder.addSpanLinksExtractor(
           SpanLinksExtractor.fromUpstreamRequest(
-              GlobalOpenTelemetry.getPropagators(), new KafkaHeadersGetter()));
+              GlobalOpenTelemetry.getPropagators(), new KafkaConsumerRecordGetter()));
     }
     return builder.newInstrumenter(SpanKindExtractor.alwaysConsumer());
   }
