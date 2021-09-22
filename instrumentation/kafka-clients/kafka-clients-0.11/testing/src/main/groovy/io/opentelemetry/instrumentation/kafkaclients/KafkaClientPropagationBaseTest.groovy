@@ -5,12 +5,9 @@
 
 package io.opentelemetry.instrumentation.kafkaclients
 
-
 import io.opentelemetry.instrumentation.test.AgentTestTrait
 import org.apache.kafka.clients.producer.ProducerRecord
 import spock.lang.Unroll
-
-import java.time.Duration
 
 abstract class KafkaClientPropagationBaseTest extends KafkaClientBaseTest implements AgentTestTrait {
 
@@ -25,7 +22,7 @@ abstract class KafkaClientPropagationBaseTest extends KafkaClientBaseTest implem
 
     then:
     // check that the message was received
-    def records = consumer.poll(Duration.ofSeconds(5).toMillis())
+    def records = records(1)
     for (record in records) {
       assert record.headers().iterator().hasNext() == propagationEnabled
     }

@@ -13,9 +13,6 @@ import static net.bytebuddy.matcher.ElementMatchers.takesArgument;
 import static net.bytebuddy.matcher.ElementMatchers.takesArguments;
 
 import io.opentelemetry.api.trace.SpanContext;
-import io.opentelemetry.instrumentation.kafka.TracingIterable;
-import io.opentelemetry.instrumentation.kafka.TracingIterator;
-import io.opentelemetry.instrumentation.kafka.TracingList;
 import io.opentelemetry.javaagent.extension.instrumentation.TypeInstrumentation;
 import io.opentelemetry.javaagent.extension.instrumentation.TypeTransformer;
 import io.opentelemetry.javaagent.instrumentation.api.InstrumentationContext;

@@ -9,6 +9,7 @@ import io.opentelemetry.instrumentation.test.InstrumentationSpecification
 import org.apache.kafka.clients.admin.AdminClient
 import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.consumer.Consumer
+import org.apache.kafka.clients.consumer.ConsumerRecords
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.Producer
@@ -17,17 +18,16 @@ import org.apache.kafka.common.serialization.IntegerDeserializer
 import org.apache.kafka.common.serialization.IntegerSerializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
+import org.junit.Assert
 import org.testcontainers.containers.KafkaContainer
 import spock.lang.Shared
 
+import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 abstract class KafkaClientBaseTest extends InstrumentationSpecification {
 
   protected static final SHARED_TOPIC = "shared.topic"
-
-  private static final boolean propagationEnabled = Boolean.parseBoolean(
-    System.getProperty("otel.instrumentation.kafka.client-propagation.enabled", "true"))
 
   @Shared
   static KafkaContainer kafka
@@ -51,6 +51,19 @@ abstract class KafkaClientBaseTest extends InstrumentationSpecification {
 
     // assign only existing topic partition
     consumer.assign([new TopicPartition(SHARED_TOPIC, 0)])
+    consumer.seekToBeginning([new TopicPartition(SHARED_TOPIC, 0)])
+  }
+
+  ConsumerRecords<Integer, String> records(int expected) {
+    int n = 0;
+    while (n++ < 600) {
+      def records = consumer.poll(Duration.ofSeconds(5).toMillis())
+      if (records.count() >= expected) {
+        return records
+      }
+      sleep(100)
+    }
+    Assert.fail("Missing " + expected + " records")
   }
 
   Map<String, ?> producerProps() {

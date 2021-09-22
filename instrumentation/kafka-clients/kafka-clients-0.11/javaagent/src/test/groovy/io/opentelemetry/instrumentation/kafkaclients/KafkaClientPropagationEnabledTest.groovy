@@ -10,8 +10,6 @@ import io.opentelemetry.semconv.trace.attributes.SemanticAttributes
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.TopicPartition
 
-import java.time.Duration
-
 import static io.opentelemetry.api.trace.SpanKind.CONSUMER
 import static io.opentelemetry.api.trace.SpanKind.INTERNAL
 import static io.opentelemetry.api.trace.SpanKind.PRODUCER
@@ -33,7 +31,7 @@ class KafkaClientPropagationEnabledTest extends KafkaClientPropagationBaseTest {
 
     then:
     // check that the message was received
-    def records = consumer.poll(Duration.ofSeconds(5).toMillis())
+    def records = records(1)
     for (record in records) {
       runWithSpan("processing") {
         assert record.value() == greeting
@@ -112,7 +110,7 @@ class KafkaClientPropagationEnabledTest extends KafkaClientPropagationBaseTest {
 
     then:
     // check that the message was received
-    def records = consumer.poll(Duration.ofSeconds(5).toMillis())
+    def records = records(1)
     for (record in records) {
       assert record.value() == null
       assert record.key() == null
@@ -183,7 +181,7 @@ class KafkaClientPropagationEnabledTest extends KafkaClientPropagationBaseTest {
     waitForTraces(1)
 
     when: "receive messages"
-    def consumerRecords = consumer.poll(Duration.ofSeconds(5).toMillis())
+    def consumerRecords = records(1)
     def recordsInPartition = consumerRecords.records(new TopicPartition(SHARED_TOPIC, partition))
     for (record in recordsInPartition) {
       assert record.value() == greeting

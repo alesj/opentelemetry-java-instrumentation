@@ -12,8 +12,6 @@ import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import spock.lang.Unroll
 
-import java.time.Duration
-
 import static io.opentelemetry.api.trace.SpanKind.CONSUMER
 import static io.opentelemetry.api.trace.SpanKind.INTERNAL
 import static io.opentelemetry.api.trace.SpanKind.PRODUCER
@@ -50,16 +48,11 @@ class InterceptorsTest extends KafkaClientBaseTest implements LibraryTestTrait {
 
     then:
     // check that the message was received
-    def records = consumer.poll(Duration.ofSeconds(5).toMillis())
+    def records = records(1)
     for (record in records) {
-      runWithSpan("processing") {
-        assert record.value() == greeting
-        assert record.key() == null
-      }
+      assert record.value() == greeting
+      assert record.key() == null
     }
-
-    def traces = waitForTraces(2)
-    println "traces = $traces"
 
     assertTraces(3) {
       traces.sort(orderByRootSpanKind(INTERNAL, PRODUCER, CONSUMER))
@@ -87,7 +80,7 @@ class InterceptorsTest extends KafkaClientBaseTest implements LibraryTestTrait {
           hasNoParent()
         }
       }
-      trace(2, 3) {
+      trace(2, 2) {
         span(0) {
           name SHARED_TOPIC + " receive"
           kind CONSUMER
@@ -109,12 +102,10 @@ class InterceptorsTest extends KafkaClientBaseTest implements LibraryTestTrait {
             "${SemanticAttributes.MESSAGING_DESTINATION_KIND.key}" "topic"
             "${SemanticAttributes.MESSAGING_OPERATION.key}" "process"
             "${SemanticAttributes.MESSAGING_MESSAGE_PAYLOAD_SIZE_BYTES.key}" Long
-            "${SemanticAttributes.MESSAGING_KAFKA_PARTITION.key}" {it >= 0}
+            "${SemanticAttributes.MESSAGING_KAFKA_PARTITION.key}" { it >= 0 }
+            "kafka.offset" Long
+            "kafka.record.queue_time_ms" { it >= 0 }
           }
-        }
-        span(2) {
-          name "processing"
-          childOf span(1)
         }
       }
     }

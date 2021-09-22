@@ -8,8 +8,6 @@ package io.opentelemetry.instrumentation.kafkaclients
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes
 import org.apache.kafka.clients.producer.ProducerRecord
 
-import java.time.Duration
-
 import static io.opentelemetry.api.trace.SpanKind.CONSUMER
 import static io.opentelemetry.api.trace.SpanKind.PRODUCER
 
@@ -37,7 +35,7 @@ class KafkaClientPropagationDisabledTest extends KafkaClientPropagationBaseTest 
     }
 
     when: "read message without context propagation"
-    def records = consumer.poll(Duration.ofSeconds(5).toMillis())
+    def records = records(1)
     for (record in records) {
       runWithSpan("processing") {}
     }
