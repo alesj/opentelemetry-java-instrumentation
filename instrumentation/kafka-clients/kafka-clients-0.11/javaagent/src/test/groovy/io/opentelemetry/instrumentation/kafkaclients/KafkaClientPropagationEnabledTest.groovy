@@ -8,7 +8,6 @@ package io.opentelemetry.instrumentation.kafkaclients
 import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.TopicPartition
 
 import static io.opentelemetry.api.trace.SpanKind.CONSUMER
 import static io.opentelemetry.api.trace.SpanKind.INTERNAL
@@ -182,7 +181,7 @@ class KafkaClientPropagationEnabledTest extends KafkaClientPropagationBaseTest {
 
     when: "receive messages"
     def consumerRecords = records(1)
-    def recordsInPartition = consumerRecords.records(new TopicPartition(SHARED_TOPIC, partition))
+    def recordsInPartition = consumerRecords.records(topicPartition)
     for (record in recordsInPartition) {
       assert record.value() == greeting
       assert record.key() == null

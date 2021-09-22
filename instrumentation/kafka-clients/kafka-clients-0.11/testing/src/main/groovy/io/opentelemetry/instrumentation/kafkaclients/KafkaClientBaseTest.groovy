@@ -9,7 +9,7 @@ import io.opentelemetry.instrumentation.test.InstrumentationSpecification
 import org.apache.kafka.clients.admin.AdminClient
 import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.consumer.Consumer
-import org.apache.kafka.clients.consumer.ConsumerRecords
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.Producer
@@ -36,6 +36,8 @@ abstract class KafkaClientBaseTest extends InstrumentationSpecification {
   @Shared
   static Consumer<Integer, String> consumer
 
+  static TopicPartition topicPartition = new TopicPartition(SHARED_TOPIC, 0)
+
   def setupSpec() {
     kafka = new KafkaContainer()
     kafka.start()
@@ -50,14 +52,16 @@ abstract class KafkaClientBaseTest extends InstrumentationSpecification {
     consumer = new KafkaConsumer<>(consumerProps())
 
     // assign only existing topic partition
-    consumer.assign([new TopicPartition(SHARED_TOPIC, 0)])
-    consumer.seekToBeginning([new TopicPartition(SHARED_TOPIC, 0)])
+    consumer.assign([topicPartition])
+    consumer.seekToBeginning([topicPartition])
   }
 
-  ConsumerRecords<Integer, String> records(int expected) {
-    int n = 0;
+  Iterable<ConsumerRecord<Integer, String>> records(int expected) {
+    int n = 0
     while (n++ < 600) {
       def records = consumer.poll(Duration.ofSeconds(5).toMillis())
+      // not the best, as we could probably get records in different polls,
+      // but collecting all records in a list breaks propagation tests
       if (records.count() >= expected) {
         return records
       }
