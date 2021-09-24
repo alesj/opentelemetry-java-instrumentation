@@ -16,13 +16,17 @@ import io.opentelemetry.context.propagation.TextMapSetter;
 import io.opentelemetry.instrumentation.api.instrumenter.Instrumenter;
 import io.opentelemetry.instrumentation.kafka.KafkaHeadersGetter;
 import io.opentelemetry.instrumentation.kafka.KafkaHeadersSetter;
+import io.opentelemetry.instrumentation.kafka.ReceivedRecords;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Headers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("rawtypes")
 public class KafkaTracing {
   public static final String INSTRUMENTATION_NAME = "io.opentelemetry.kafka-clients-0.11.library";
 
@@ -32,13 +36,16 @@ public class KafkaTracing {
 
   private static final TextMapSetter<Headers> SETTER = new KafkaHeadersSetter();
 
-  private final Instrumenter<ProducerRecord<?, ?>, Void> producerInstrumenter;
-  private final Instrumenter<ConsumerRecord<?, ?>, Void> consumerProcessInstrumenter;
+  private final Instrumenter<ProducerRecord, Void> producerInstrumenter;
+  private final Instrumenter<ReceivedRecords, Void> consumerReceiveInstrumenter;
+  private final Instrumenter<ConsumerRecord, Void> consumerProcessInstrumenter;
 
   KafkaTracing(
-      Instrumenter<ProducerRecord<?, ?>, Void> producerInstrumenter,
-      Instrumenter<ConsumerRecord<?, ?>, Void> consumerProcessInstrumenter) {
+      Instrumenter<ProducerRecord, Void> producerInstrumenter,
+      Instrumenter<ReceivedRecords, Void> consumerReceiveInstrumenter,
+      Instrumenter<ConsumerRecord, Void> consumerProcessInstrumenter) {
     this.producerInstrumenter = producerInstrumenter;
+    this.consumerReceiveInstrumenter = consumerReceiveInstrumenter;
     this.consumerProcessInstrumenter = consumerProcessInstrumenter;
   }
 
@@ -48,6 +55,14 @@ public class KafkaTracing {
 
   private static TextMapPropagator propagator() {
     return GlobalOpenTelemetry.getPropagators().getTextMapPropagator();
+  }
+
+  public <K, V> Producer<K, V> wrap(Producer<K, V> producer) {
+    return new TracingProducer<K, V>(producer, producerInstrumenter);
+  }
+
+  public <K, V> Consumer<K, V> wrap(Consumer<K, V> consumer) {
+    return new TracingConsumer<K, V>(consumer, consumerReceiveInstrumenter, consumerProcessInstrumenter);
   }
 
   /**
